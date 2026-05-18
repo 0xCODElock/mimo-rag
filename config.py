@@ -12,7 +12,7 @@ class MiMoConfig:
     """MiMo API configuration."""
     api_key: str = field(default_factory=lambda: os.getenv("MIMO_API_KEY", ""))
     api_base: str = field(default_factory=lambda: os.getenv("MIMO_API_BASE", "https://api.xiaomimimo.com/v1"))
-    model: str = field(default_factory=lambda: os.getenv("MIMO_MODEL", "MiMo-7B-RL"))
+    model: str = field(default_factory=lambda: os.getenv("MIMO_MODEL", "MiMo-V2.5"))
     max_tokens: int = field(default_factory=lambda: int(os.getenv("MAX_TOKENS", "1024")))
     temperature: float = field(default_factory=lambda: float(os.getenv("TEMPERATURE", "0.7")))
 

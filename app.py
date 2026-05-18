@@ -36,8 +36,9 @@ with st.sidebar:
 
     model = st.selectbox(
         "Model",
-        ["MiMo-7B-RL", "MiMo-7B-SFT"],
+        ["MiMo-V2.5", "MiMo-V2.5-Pro", "MiMo-V2-Flash", "MiMo-V2-Pro", "MiMo-7B-RL"],
         index=0,
+        help="MiMo-V2.5 is the latest open-source model (310B MoE, 1M context)",
     )
 
     st.divider()

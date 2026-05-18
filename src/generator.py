@@ -38,13 +38,20 @@ class MiMoGenerator:
 
     The MiMo API follows the OpenAI-compatible chat completion interface,
     so we use the ``openai`` SDK with a custom ``base_url``.
+
+    Supported models (as of 2026):
+        - MiMo-V2.5        (310B MoE, multimodal, 1M context — recommended)
+        - MiMo-V2.5-Pro    (proprietary, higher capability)
+        - MiMo-V2-Flash    (309B, fast inference)
+        - MiMo-V2-Pro      (1T params, proprietary)
+        - MiMo-7B-RL       (open-weight, lightweight)
     """
 
     def __init__(
         self,
         api_key: str,
         api_base: str = "https://api.xiaomimimo.com/v1",
-        model: str = "MiMo-7B-RL",
+        model: str = "MiMo-V2.5",
         max_tokens: int = 1024,
         temperature: float = 0.7,
     ):
