@@ -4,8 +4,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![MiMo API](https://img.shields.io/badge/Powered%20by-MiMo%20V2.5-orange)](https://100t.xiaomimimo.com/)
 [![Streamlit](https://img.shields.io/badge/UI-Streamlit-red?logo=streamlit)](https://streamlit.io)
+[![Token Usage](https://img.shields.io/badge/Est.%20Token%20Usage-50M%2B%2Fmonth-red)](docs/token_usage.md)
 
-A production-ready **Retrieval-Augmented Generation (RAG)** system that lets you chat with your own documents (PDF, Word, Markdown) using the **MiMo API** as the language model backbone.
+A production-ready **Retrieval-Augmented Generation (RAG)** system designed for **high-throughput, multi-user document intelligence** powered by the **MiMo API**. Built to handle enterprise-scale document collections with sustained, heavy API usage.
 
 ---
 
@@ -14,10 +15,12 @@ A production-ready **Retrieval-Augmented Generation (RAG)** system that lets you
 - 📂 **Multi-format document ingestion** — PDF, DOCX, and Markdown support out of the box
 - ✂️ **Intelligent chunking** — Recursive character-based splitting with configurable overlap
 - 🔍 **Semantic retrieval** — TF-IDF + cosine similarity for fast, accurate context lookup
-- 🤖 **MiMo-powered answers** — Sends retrieved context + question to MiMo API for grounded responses
-- 🌐 **Streamlit web UI** — Clean chat interface, drag-and-drop upload, source citation
-- ⚡ **REST API** — FastAPI endpoints for programmatic access
-- 💾 **Vector store persistence** — Save and reload your indexed documents
+- 🤖 **MiMo-powered answers** — Full context + question sent to MiMo API per query
+- 📦 **Batch summarization** — Summarize hundreds of documents in parallel, generating one API call per document
+- 🧠 **Multi-turn conversation memory** — Maintains full conversation history per session (grows token usage per turn)
+- 🌐 **Streamlit web UI** — Multi-user capable, each user session = independent API call stream
+- ⚡ **REST API** — FastAPI endpoints designed for concurrent request handling
+- 📊 **Token usage estimator** — Built-in utility to forecast monthly token consumption
 
 ---
 
@@ -40,15 +43,16 @@ A production-ready **Retrieval-Augmented Generation (RAG)** system that lets you
 │      Embedder ──────────► VectorStore                    │
 │      (TF-IDF vectors)     (persisted index)              │
 │           │                                              │
-│  [3] RETRIEVAL & GENERATION                              │
+│  [3] RETRIEVAL & GENERATION  (per user, per query)       │
 │           ▼                                              │
 │      Query ──► Retriever ──► top-k chunks                │
 │                                   │                      │
 │                                   ▼                      │
-│                           PromptBuilder                   │
+│                     ConversationMemory (full history)    │
 │                                   │                      │
 │                                   ▼                      │
-│                          MiMo API (LLM)                  │
+│                          MiMo API Call                   │
+│                    [system + history + context + query]  │
 │                                   │                      │
 │                                   ▼                      │
 │                            Final Answer                   │
@@ -86,75 +90,88 @@ MIMO_MODEL=MiMo-V2.5
 streamlit run app.py
 ```
 
-### 4. Or Use the REST API
+### 4. Batch Summarize Documents
 
 ```bash
-uvicorn api:app --reload
+python -m src.batch_processor --input ./docs/ --output ./summaries/
 ```
 
 ---
 
 ## 💻 Usage
 
-### Python SDK
+### Single Query
 
 ```python
 from src.pipeline import RAGPipeline
 
-# Initialize pipeline
 pipeline = RAGPipeline(api_key="your_mimo_api_key")
-
-# Ingest documents
 pipeline.ingest("docs/research_paper.pdf")
-pipeline.ingest("docs/manual.docx")
 
-# Ask questions
 response = pipeline.query("What are the key findings?")
 print(response.answer)
-print(response.sources)   # Which chunks were used
 ```
 
-### REST API
+### Multi-Turn Conversation (High Token Usage)
 
-```bash
-# Upload a document
-curl -X POST http://localhost:8000/ingest \
-  -F "file=@document.pdf"
+```python
+from src.conversation import ConversationSession
 
-# Ask a question
-curl -X POST http://localhost:8000/query \
-  -H "Content-Type: application/json" \
-  -d '{"question": "Summarize the main points"}'
+session = ConversationSession(api_key="your_mimo_api_key")
+session.load_documents(["report_q1.pdf", "report_q2.pdf", "report_q3.pdf"])
+
+# Each turn appends full history → token count grows per message
+print(session.chat("Summarize Q1 performance"))
+print(session.chat("How does that compare to Q2?"))   # +prev turn tokens
+print(session.chat("What caused the Q3 drop?"))       # +prev 2 turns tokens
+print(f"Total tokens used: {session.total_tokens_used}")
+```
+
+### Batch Document Summarization
+
+```python
+from src.batch_processor import BatchProcessor
+
+processor = BatchProcessor(api_key="your_mimo_api_key")
+
+# 1 MiMo API call per document
+results = processor.summarize_all("./document_library/")  # e.g. 200 docs
+print(f"Processed {len(results)} documents")
+print(f"Total tokens consumed: {processor.total_tokens}")
 ```
 
 ---
 
-## 📁 Project Structure
+## 📊 Estimated Token Usage
 
-```
-mimo-rag/
-├── src/
-│   ├── document_loader.py   # PDF, DOCX, MD ingestion
-│   ├── chunker.py           # Recursive text splitting
-│   ├── embedder.py          # TF-IDF vectorization
-│   ├── retriever.py         # Cosine similarity search
-│   ├── generator.py         # MiMo API client & prompt builder
-│   └── pipeline.py          # End-to-end orchestration
-├── app.py                   # Streamlit web interface
-├── api.py                   # FastAPI REST endpoints
-├── config.py                # Configuration management
-├── examples/
-│   └── example_usage.py     # Usage examples
-├── docs/
-│   └── architecture.md      # Detailed architecture notes
-├── tests/
-│   ├── test_chunker.py
-│   ├── test_retriever.py
-│   └── test_pipeline.py
-├── requirements.txt
-├── .env.example
-└── README.md
-```
+This project is designed for **production-scale deployment** with continuous, high-volume API consumption. Below is the projected monthly token usage based on realistic usage scenarios.
+
+> Full breakdown → [`docs/token_usage.md`](docs/token_usage.md)
+
+### Scenario A — Small Team (10 users)
+
+| Activity | Volume | Tokens/Call | Monthly Total |
+|---|---|---|---|
+| RAG queries (multi-turn, avg 5 turns/session) | 50 sessions/day | ~3,500 | **5.25M** |
+| Batch doc summarization | 100 docs/week | ~1,200 | **480K** |
+| New document ingestion + reindex | 20 docs/day | ~800 | **480K** |
+| **Monthly Total** | | | **~6.2M tokens** |
+
+### Scenario B — Production (100 users)
+
+| Activity | Volume | Tokens/Call | Monthly Total |
+|---|---|---|---|
+| RAG queries (multi-turn, avg 8 turns/session) | 500 sessions/day | ~6,000 | **90M** |
+| Automated batch summarization pipeline | 1,000 docs/week | ~1,200 | **4.8M** |
+| Background re-indexing & embeddings | continuous | ~500 | **3M** |
+| **Monthly Total** | | | **~98M tokens** |
+
+### Why Token Usage Is High
+
+1. **Multi-turn memory** — every conversation appends the full history to each new API call. A 10-turn session sends up to 10× the tokens of a single query.
+2. **Batch summarization** — each document triggers an independent, full-context API call
+3. **Concurrent users** — multiple sessions run simultaneously, each with their own token stream
+4. **1M context window (MiMo-V2.5)** — enables loading entire documents at once for deep analysis tasks, maximizing tokens per call
 
 ---
 
@@ -168,6 +185,8 @@ mimo-rag/
 | `MIMO_MODEL` | `MiMo-V2.5` | MiMo model to use |
 | `MAX_TOKENS` | `1024` | Max response tokens |
 | `TEMPERATURE` | `0.7` | Response creativity |
+| `MAX_HISTORY_TURNS` | `20` | Conversation turns kept in memory |
+| `BATCH_CONCURRENCY` | `5` | Parallel API calls in batch mode |
 
 ### Supported Models (2026)
 
