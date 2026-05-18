@@ -1,0 +1,22 @@
+# Core dependencies
+openai>=1.0.0          # MiMo API is OpenAI-compatible
+streamlit>=1.32.0      # Web UI
+fastapi>=0.110.0       # REST API
+uvicorn>=0.29.0        # ASGI server
+python-dotenv>=1.0.0   # .env config
+
+# Document processing
+pypdf>=4.0.0           # PDF parsing
+python-docx>=1.1.0     # DOCX parsing
+markdown>=3.5.0        # Markdown processing
+
+# ML / NLP
+scikit-learn>=1.4.0    # TF-IDF + cosine similarity
+numpy>=1.26.0          # Numerical ops
+scipy>=1.12.0          # Sparse matrix ops
+
+# Utilities
+tqdm>=4.66.0           # Progress bars
+rich>=13.7.0           # Pretty terminal output
+pydantic>=2.6.0        # Data validation
+python-multipart>=0.0.9 # File upload support
